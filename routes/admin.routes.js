@@ -672,10 +672,11 @@ router.post('/attendance/bulk', async (req, res) => {
 router.post('/attendance', async (req, res) => {
   try {
     const { userId, date, status, checkIn, checkOut, totalHours, remarks } = req.body;
-    
+        const [year, month, day] = date.split('T')[0].split('-');
+    const attendanceDate = new Date(year, month - 1, day);
     const attendance = new Attendance({
       user: userId,
-      date: new Date(date),
+      date: attendanceDate,
       status,
       checkIn: checkIn ? new Date(checkIn) : undefined,
       checkOut: checkOut ? new Date(checkOut) : undefined,

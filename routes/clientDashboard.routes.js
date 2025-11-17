@@ -9,7 +9,7 @@ const router = express.Router();
 // Apply authentication middleware to all routes
 router.use(authenticate);
 // Only clients can access these routes
-router.use(authorize('client'));
+router.use(authorize('client','super_admin'));
 
 /**
  * GET /api/client/projects
@@ -46,6 +46,7 @@ router.get('/projects', async (req, res) => {
  * Returns: project name, start date, deadline, cost, payment, status, progress
  */
 router.get('/projects/:projectId', async (req, res) => {
+  console.log("hello")
   try {
     const project = await Project.findById(req.params.projectId)
       .populate('client', 'name email phone company')
@@ -60,15 +61,15 @@ router.get('/projects/:projectId', async (req, res) => {
         message: 'Project not found' 
       });
     }
-    
+  
     // Verify that the project belongs to the logged-in client
-    if (project.client._id.toString() !== req.user._id.toString()) {
+    if (project.client._id.toString() !== req.user._id.toString() && req.user.role !== 'super_admin') {
       return res.status(403).json({ 
         success: false, 
         message: 'Access denied. This project does not belong to you.' 
       });
     }
-    
+    console.log("verified")
     // Calculate payment information
     const paymentInfo = {
       totalBudget: project.budget || 0,
@@ -128,7 +129,7 @@ router.get('/projects/:projectId/updates', async (req, res) => {
     }
     
     // Verify project belongs to the client
-    if (project.client.toString() !== req.user._id.toString()) {
+    if (project.client.toString() !== req.user._id.toString() && req.user.role !== 'super_admin') {
       return res.status(403).json({ 
         success: false, 
         message: 'Access denied. This project does not belong to you.' 
