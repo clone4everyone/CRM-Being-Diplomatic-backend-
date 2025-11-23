@@ -387,52 +387,59 @@ router.get('/stats', async (req, res) => {
       { status: 'cancelled', count: cancelledProjects, label: 'Cancelled' }
     ];
 
-    // Monthly project completion trend (last 6 months)
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+ // Monthly project completion trend (last 6 months)
+const sixMonthsAgo = new Date();
+sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-    const completedProjectsByMonth = await Project.aggregate([
-      {
-        $match: {
-          status: 'completed',
-          completedDate: { $gte: sixMonthsAgo }
-        }
-      },
-      {
-        $group: {
-          _id: {
-            year: { $year: '$completedDate' },
-            month: { $month: '$completedDate' }
-          },
-          count: { $sum: 1 }
-        }
-      },
-      {
-        $sort: { '_id.year': 1, '_id.month': 1 }
-      }
-    ]);
-
-    // Monthly earnings trend (last 6 months)
-    const earningsByMonth = await Project.aggregate([
-      {
-        $match: {
-          paid: { $gt: 0 },
+const completedProjectsByMonth = await Project.aggregate([
+  {
+    $match: {
+      status: 'completed',
+      $or: [
+        { completedDate: { $gte: sixMonthsAgo } },
+        { 
+          completedDate: { $exists: false },
           updatedAt: { $gte: sixMonthsAgo }
         }
+      ]
+    }
+  },
+  {
+    $group: {
+      _id: {
+        year: { $year: { $ifNull: ['$completedDate', '$updatedAt'] } },
+        month: { $month: { $ifNull: ['$completedDate', '$updatedAt'] } }
       },
-      {
-        $group: {
-          _id: {
-            year: { $year: '$updatedAt' },
-            month: { $month: '$updatedAt' }
-          },
-          earnings: { $sum: '$paid' }
-        }
+      count: { $sum: 1 }
+    }
+  },
+  {
+    $sort: { '_id.year': 1, '_id.month': 1 }
+  }
+]);
+
+    // Monthly earnings trend (last 6 months)
+ // Monthly earnings trend (last 6 months)
+const earningsByMonth = await Project.aggregate([
+  {
+    $match: {
+      paid: { $gt: 0 },
+      createdAt: { $gte: sixMonthsAgo } // Changed from updatedAt to createdAt for consistency
+    }
+  },
+  {
+    $group: {
+      _id: {
+        year: { $year: '$createdAt' },
+        month: { $month: '$createdAt' }
       },
-      {
-        $sort: { '_id.year': 1, '_id.month': 1 }
-      }
-    ]);
+      earnings: { $sum: '$paid' }
+    }
+  },
+  {
+    $sort: { '_id.year': 1, '_id.month': 1 }
+  }
+]);
 
     // Top clients by revenue
     const topClients = await Project.aggregate([
