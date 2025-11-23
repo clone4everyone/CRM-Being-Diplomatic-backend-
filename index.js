@@ -40,7 +40,8 @@ app.use('/api/designer', designerRoutes);
 app.use('/api/developer', developerRoutes);
 app.use('/api/client', clientRoutes);
 app.use('/api/updateProjects', updateProjectRoutes);
-app.use('/api/clientDashboard',clientDashboardRoutes)
+app.use('/api/clientDashboard',clientDashboardRoutes);
+app.use('/api/sales', salesRoutes);
 // Health Check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });

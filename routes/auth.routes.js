@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const { authenticate } = require('../middleware/auth');
-
+const {sendVerificationEmail} =require('../utils/emailService')
 const router = express.Router();
 
 // Register
@@ -26,18 +26,26 @@ router.post('/register', async (req, res) => {
       phone,
       address,
       verificationToken,
-      role: 'client' // Default role
+      isVerified: false,
+      role: 'client'
     });
 
     await user.save();
 
-    // In production, send verification email here
-    console.log(`Verification token for ${email}: ${verificationToken}`);
+    // Send verification email
+    const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email/${verificationToken}`;
+    
+    try {
+      await sendVerificationEmail(email, verificationLink, name);
+      console.log(`Verification email sent to ${email}`);
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Don't fail registration if email fails, but log it
+    }
 
     res.status(201).json({ 
       success: true, 
-      message: 'Registration successful. Please verify your email and wait for admin approval.',
-      verificationToken // Remove in production
+      message: 'Registration successful. Please check your email to verify your account.'
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

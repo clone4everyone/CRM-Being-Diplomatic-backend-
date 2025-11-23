@@ -66,6 +66,7 @@ router.get('/users', async (req, res) => {
     if (active !== undefined) filter.active = active === 'true';
     
     const users = await User.find(filter).select('-password -verificationToken');
+    
     res.json({ success: true, users });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
