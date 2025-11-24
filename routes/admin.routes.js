@@ -17,7 +17,7 @@ router.get('/pending-users', async (req, res) => {
     const users = await User.find({ 
       isVerified: true, 
       isApproved: false,
-      role: { $ne: 'client' } // Exclude clients
+      // role: { $ne: 'client' } // Exclude clients
     }).select('-password -verificationToken');
     
     res.json({ success: true, users });
@@ -101,7 +101,8 @@ router.put('/users/:userId', async (req, res) => {
     if (email !== undefined) updateData.email = email;
     if (phone !== undefined) updateData.phone = phone;
     if (address !== undefined) updateData.address = address;
-    if (role !== undefined && role !== 'client') updateData.role = role;
+    // if (role !== undefined && role !== 'client') updateData.role = role;
+    if (role !== undefined ) updateData.role = role;
     if (salary !== undefined) updateData.salary = salary;
     if (joiningDate !== undefined) updateData.joiningDate = joiningDate;
     if (active !== undefined) updateData.active = active;
@@ -239,7 +240,7 @@ router.put('/clients/:clientId/approval', async (req, res) => {
 // Update client details
 router.put('/clients/:clientId', async (req, res) => {
   try {
-    const { name, email, phone, address, active } = req.body;
+    const { name, email, phone, address, active,role } = req.body;
     
     const updateData = {};
     if (name !== undefined) updateData.name = name;
@@ -247,7 +248,7 @@ router.put('/clients/:clientId', async (req, res) => {
     if (phone !== undefined) updateData.phone = phone;
     if (address !== undefined) updateData.address = address;
     if (active !== undefined) updateData.active = active;
-    
+    if (role !== undefined) updateData.role = role;
     const client = await User.findOneAndUpdate(
       { _id: req.params.clientId, role: 'client' },
       updateData,
