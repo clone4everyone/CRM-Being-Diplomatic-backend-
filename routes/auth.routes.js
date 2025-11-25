@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const { authenticate } = require('../middleware/auth');
 const {sendVerificationEmail} =require('../utils/emailService')
+const PendingUser =require('../models/PendingUser')
 const router = express.Router();
 
 // Register
@@ -13,39 +14,29 @@ router.post('/register', async (req, res) => {
     const { name, email, password, phone, address } = req.body;
 
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    const pendingUser = await PendingUser.findOne({ email });
+
+    if (existingUser || pendingUser) {
       return res.status(400).json({ success: false, message: 'Email already registered' });
     }
 
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
-    const user = new User({
+    await PendingUser.create({
       name,
       email,
       password,
       phone,
       address,
-      verificationToken,
-      isVerified: false,
-      role: 'client'
+      verificationToken
     });
 
-    await user.save();
+    const verificationLink = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+    await sendVerificationEmail(email, verificationLink, name);
 
-    // Send verification email
-    const verificationLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email/${verificationToken}`;
-    
-    try {
-      await sendVerificationEmail(email, verificationLink, name);
-      console.log(`Verification email sent to ${email}`);
-    } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
-      // Don't fail registration if email fails, but log it
-    }
-
-    res.status(201).json({ 
-      success: true, 
-      message: 'Registration successful. Please check your email to verify your account.'
+    res.status(201).json({
+      success: true,
+      message: 'Verification email sent. Please verify to complete registration.'
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -55,20 +46,26 @@ router.post('/register', async (req, res) => {
 // Verify Email
 router.get('/verify-email/:token', async (req, res) => {
   try {
-    const user = await User.findOne({ verificationToken: req.params.token });
+    const pendingUser = await PendingUser.findOne({ verificationToken: req.params.token });
 
-    if (!user) {
-      return res.status(400).json({ success: false, message: 'Invalid verification token' });
+    if (!pendingUser) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
     }
 
-    user.isVerified = true;
-    user.verificationToken = undefined;
-    await user.save();
-
-    res.json({ 
-      success: true, 
-      message: 'Email verified successfully. Please wait for admin approval.' 
+    const user = new User({
+      name: pendingUser.name,
+      email: pendingUser.email,
+      password: pendingUser.password,
+      phone: pendingUser.phone,
+      address: pendingUser.address,
+      isVerified: true,
+      role: 'client'
     });
+
+    await user.save();
+    await PendingUser.deleteOne({ _id: pendingUser._id });
+
+    res.json({ success: true, message: 'Email verified! Account created successfully.' });        
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
