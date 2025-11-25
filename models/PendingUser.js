@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const pendingUserSchema = new mongoose.Schema({
   name: String,
@@ -10,4 +10,4 @@ const pendingUserSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now, expires: '24h' } // auto delete after 24h
 });
 
-export default mongoose.model('PendingUser', pendingUserSchema);
+module.exports = mongoose.model('PendingUser', pendingUserSchema);
