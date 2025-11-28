@@ -31,6 +31,7 @@ const developerRoutes = require('./routes/developer.routes');
 const clientRoutes = require('./routes/client.routes');
 const updateProjectRoutes=require("./routes/updateProject.routes");
 const clientDashboardRoutes=require("./routes/clientDashboard.routes");
+const activityLogRoutes = require('./routes/activityLog.routes');
 // Route Middleware
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
@@ -42,6 +43,7 @@ app.use('/api/client', clientRoutes);
 app.use('/api/updateProjects', updateProjectRoutes);
 app.use('/api/clientDashboard',clientDashboardRoutes);
 app.use('/api/sales', salesRoutes);
+app.use('/api/activity-logs', activityLogRoutes);
 // Health Check
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });

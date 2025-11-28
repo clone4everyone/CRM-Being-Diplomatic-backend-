@@ -101,7 +101,7 @@ console.log("login")
     const token = jwt.sign(
       { userId: user._id, role: user.role },
       process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '7d' }
+      { expiresIn: '1d' }
     );
 
     res.json({
